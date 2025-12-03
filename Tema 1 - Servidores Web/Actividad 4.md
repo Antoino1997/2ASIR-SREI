@@ -1,3 +1,5 @@
+# Directivas básicas
+
 | Directiva | Uso / Función | Ejemplo encontrado |
 | :--- | :--- | :--- |
 | **`<IfModule>`** | Es una sección que permite escribir directivas condicionadas por la presencia (o ausencia) de un módulo específico en Apache. | `<IfModule ssl_module>` <br> `Listen 443` <br> `</IfModule>` (Usado en `/etc/apache2/ports.conf` para escuchar el puerto 443 solo si el módulo SSL está cargado). |
