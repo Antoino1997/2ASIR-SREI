@@ -1,3 +1,5 @@
+# Directivas básicas
+
 ## Directivas de Identificación
 
 | Directiva | Descripción | Valor por Defecto (Típico) | Ubicación Común (Típica) |
