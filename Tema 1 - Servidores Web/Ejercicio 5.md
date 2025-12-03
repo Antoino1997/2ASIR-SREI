@@ -1,4 +1,4 @@
-# 
+# Control de acceso en Apache
 
 ## 1. Crea un directorio llamado "dir1" y otro llamado "dir2"
 Para ello creamos los dos directorios y nos aseguramos:
