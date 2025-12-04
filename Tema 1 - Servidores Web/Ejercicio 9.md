@@ -20,3 +20,16 @@ En /etc/apache2/apache2.conf ponemos lo siguiente:
 Y lo comprobamos:
 <br/> <img width="849" height="456" alt="8" src="https://github.com/user-attachments/assets/77091b7d-8ee1-4ad7-84bc-95a8afef705f" /> <br/>
 <br/> <img width="841" height="264" alt="9" src="https://github.com/user-attachments/assets/305af2c7-8a7c-4689-a8b7-22824a1d23b4" />
+
+## 5. Esta parte es teórica.
+
+## 6. En el directorio privado2 haz que sólo sea accesible desde el localhost, y estudia cómo se comporta la autorización si ponemos: satisfy any, satisfy all
+Primero tenemos que activar el módulo con:
+~~~
+sudo a2enmod access_compat
+~~~
+<br/> <img width="652" height="167" alt="10" src="https://github.com/user-attachments/assets/d7809686-2c4a-4d27-b22f-84bfb8626266" /> <br/>
+La primera, con Satisfy All nos dice que debemos cumplir todas las condiciones (entrar desde localhost y que usuario y contraseña sean reconocidos).
+<br/> <img width="394" height="256" alt="11" src="https://github.com/user-attachments/assets/4b258c49-8d07-40ed-b875-43873b161362" /> <br/>
+Y en el segundo caso, con Satisfy Any, solo tiene que cumplirse uno:
+<br/> <img width="646" height="484" alt="12" src="https://github.com/user-attachments/assets/b95d9cab-b377-42ce-ad2e-dd17f1c4f300" />
