@@ -23,3 +23,10 @@
 | Ejercicio | Descripción |
 | :--- | :--- |
 | [Práctica Primer Trimestre](Trabajo%201º%20Trimestre%20-%20Servidores%20Web/README.md) | Documentación de la práctica sobre servidores web |
+
+
+# Práctica AWS
+
+| Ejercicio | Descripción |
+| :--- | :--- |
+| [Práctica AWS](Practica%20AWS/README.md) | Documentación de la práctica sobre AWS |
