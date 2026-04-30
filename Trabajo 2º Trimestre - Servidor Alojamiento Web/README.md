@@ -85,3 +85,247 @@ Descomentamos el write_enable para permitir que los usuarios puedan subir sus ar
 <br/> <br/> <img width="1279" height="864" alt="18" src="https://github.com/user-attachments/assets/68971e0d-32f6-4b23-9a63-15299b4a327e" /> <br/>
 Y también borramos al final del todo las líneas relacionadas con el certificado RSA para añadirles las que apuntan a nuestro certificado TLS:
 <br/> <br/> <img width="1287" height="867" alt="19" src="https://github.com/user-attachments/assets/9bd77eac-63e6-4f51-9564-6583fc1bba5c" /> <br/>
+Una vez guardados los cambios, reiniciamos el servicio y comprobamos el certificado con:
+~~~
+openssl s_client -connect 127.0.0.1:21 -starttls ftp | head -20
+~~~
+<br/> <img width="1280" height="323" alt="20" src="https://github.com/user-attachments/assets/8f4b947b-d9a4-4358-ae05-4434222045ea" /> <br/>
+
+## 3.2 Preparar las Zonas del DNS (Bind9).
+Tenemos que crear un dominio principal para que nuestro script cree los subdominios. Vamos a llamarlo midominio.local y a configurar los archivos de bind9.
+<br/> <br/> <img width="1280" height="323" alt="21" src="https://github.com/user-attachments/assets/86c9e552-aaa2-415f-acdf-3e7a27ab6e6d" /> <br/>
+Ahora creamos el archivo de la zona directa:
+<br/> <br/> <img width="1280" height="321" alt="22" src="https://github.com/user-attachments/assets/09bdc4a9-23f8-4955-a964-3eae08cce608" /> <br/>
+Comprobamos:
+<br/> <br/> <img width="1277" height="139" alt="23" src="https://github.com/user-attachments/assets/8d9ece9b-5966-416d-a025-8298dafb7c1a" /> <br/>
+Y creamos el archivo de la zona inversa:
+<br/> <br/> <img width="1282" height="255" alt="24" src="https://github.com/user-attachments/assets/fd728456-002e-4b1e-9bb8-bb600e6ec130" /> <br/>
+Comprobamos:
+<br/> <br/> <img width="1277" height="159" alt="25" src="https://github.com/user-attachments/assets/d0fb849e-6430-407a-bc2a-cf78b921cbf7" /> <br/>
+Reiniciamos Bind9 para que cargue el nuevo dominio:
+<br/> <br/> <img width="1277" height="489" alt="26" src="https://github.com/user-attachments/assets/21c2828f-754a-467f-bd58-04a84d86327b" /> <br/>
+Y se comprueba con dig:
+<br/> <br/> <img width="1277" height="142" alt="27" src="https://github.com/user-attachments/assets/596477f8-ce5a-42dd-895a-44d3e4a578dc" /> <br/>
+
+## 3.3 Habilitar Python en Apache.
+Activamos el paquete libapache2-mod-wsgi-py3:
+<br/> <br/> <img width="1280" height="136" alt="28" src="https://github.com/user-attachments/assets/5c135190-381d-4248-8de6-3eb0b6bc3d80" /> <br/>
+Y comprobamos:
+<br/> <br/> <img width="1283" height="249" alt="29" src="https://github.com/user-attachments/assets/d5dd31ac-92e2-4118-a436-3b3406c808ce" /> <br/>
+
+## 4. El Script de Automatización.
+Creamos un archivo para el script (nuevo_cliente.sh) y este sería el script:
+~~~
+#!/bin/bash
+
+# Script de automatización de alojamiento
+################################################################################
+
+# Validación inicial
+if [ "$#" -ne 2 ]; then
+    echo "Introduzca los parámetros cliente y contraseña, por ese orden."
+    echo "Ejemplo: sudo ./crear_cliente.sh cliente1 password123"
+    exit 1
+fi
+
+USUARIO=$1
+PASS=$2
+DOMINIO="${USUARIO}.midominio.local"
+IP_SERVIDOR="192.168.193.110"
+OCTETO_FINAL="110" 
+
+echo "*** Iniciando despliegue para el usuario: $USUARIO ***"
+
+# Creación del usuario del sistema (Acceso FTP, SSH y SFTP) y Directorio Web
+#################################################################################
+
+
+echo "[1/5] Creando usuario del sistema y directorio web..."
+# -m crea el home, -s /bin/bash permite acceso por SSH/SFTP
+useradd -m -s /bin/bash $USUARIO
+echo "$USUARIO:$PASS" | chpasswd
+
+DIR_WEB="/home/$USUARIO/public_html"
+mkdir -p $DIR_WEB
+
+# Página web dinámica por defecto (PHP)
+cat <<EOF > $DIR_WEB/index.php
+<!DOCTYPE html>
+<html>
+<head><title>Bienvenido $USUARIO</title></head>
+<body>
+    <h1>Hosting configurado correctamente para $DOMINIO</h1>
+    <?php echo "<p>Soporte PHP activado. ¡Hola mundo!</p>"; ?>
+</body>
+</html>
+EOF
+
+# Permisos para que Apache pueda leer, pero el dueño sea el usuario
+chown -R $USUARIO:www-data /home/$USUARIO
+chmod -R 755 /home/$USUARIO
+
+# Base de datos MySQL / MariaDB (ALL PRIVILEGES)
+################################################################################
+
+echo "[2/5] Creando base de datos y usuario SQL..."
+DB_NAME="${USUARIO}_db"
+mysql -u root -e "CREATE DATABASE ${DB_NAME};"
+mysql -u root -e "CREATE USER '${USUARIO}'@'localhost' IDENTIFIED BY '${PASS}';"
+mysql -u root -e "GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${USUARIO}'@'localhost';"
+mysql -u root -e "FLUSH PRIVILEGES;"
+
+# Virtual Host en Apache (Web normal y Python)
+################################################################################
+
+echo "[3/5] Configurando Virtual Host en Apache..."
+VHOST_FILE="/etc/apache2/sites-available/${DOMINIO}.conf"
+
+cat <<EOF > $VHOST_FILE
+<VirtualHost *:80>
+    ServerName $DOMINIO
+    DocumentRoot $DIR_WEB
+
+    <Directory $DIR_WEB>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    # Configuración para ejecutar Python (WSGI)
+    WSGIScriptAlias /python $DIR_WEB/app.wsgi
+    <Directory $DIR_WEB>
+        <Files app.wsgi>
+            Require all granted
+        </Files>
+    </Directory>
+
+    ErrorLog \${APACHE_LOG_DIR}/${USUARIO}_error.log
+    CustomLog \${APACHE_LOG_DIR}/${USUARIO}_access.log combined
+</VirtualHost>
+EOF
+
+# App Python de prueba
+cat <<EOF > $DIR_WEB/app.wsgi
+def application(environ, start_response):
+    status = '200 OK'
+    output = b'Hola! La aplicacion Python funciona en tu hosting. \n'
+    response_headers = [('Content-type', 'text/plain'),
+                        ('Content-Length', str(len(output)))]
+    start_response(status, response_headers)
+    return [output]
+EOF
+chown $USUARIO:www-data $DIR_WEB/app.wsgi
+
+# Activamos el sitio en Apache
+a2ensite ${DOMINIO}.conf
+systemctl reload apache2
+
+# DNS (Subdominio y Resolución Inversa)
+################################################################################
+
+echo "[4/5] Configurando registros DNS en Bind9..."
+ZONA_DIRECTA="/etc/bind/db.midominio.local"
+ZONA_INVERSA="/etc/bind/db.193"
+
+# Añadir a zona directa
+echo "${USUARIO}    IN    A    ${IP_SERVIDOR}" >> $ZONA_DIRECTA
+# Añadir a zona inversa
+echo "${OCTETO_FINAL}      IN    PTR  ${DOMINIO}." >> $ZONA_INVERSA
+
+systemctl restart bind9
+
+# TODO LISTO
+
+echo "[5/5] ¡Proceso completado con éxito!"
+echo "-----------------------------------------------------"
+echo "Resumen de acceso:"
+echo "- Web (PHP): http://$DOMINIO"
+echo "- Web (Python): http://$DOMINIO/python"
+echo "- Base de datos: $DB_NAME (Usuario: $USUARIO)"
+echo "- FTP/SSH/SFTP: Usuario $USUARIO"
+echo "¡GRACIAS POR CONTRATAR NUESTROS SERVICIOS!"
+echo "-----------------------------------------------------"
+~~~
+<br/> <img width="1280" height="107" alt="30" src="https://github.com/user-attachments/assets/0b02f244-606f-430d-ba9f-7b682e35a0a0" />
+<img width="1282" height="864" alt="31" src="https://github.com/user-attachments/assets/a4ddcd51-db37-4c54-b2eb-b16b17565467" />
+<img width="1281" height="865" alt="32" src="https://github.com/user-attachments/assets/840bc496-355d-4fb9-98e2-5375b0525c5f" />
+<img width="1282" height="867" alt="33" src="https://github.com/user-attachments/assets/536493cf-d2b8-43e9-8438-4129da144e4d" /> <br/>
+Una vez hecho, le proporcionamos permisos de ejecución y ya estaría listo para usar.
+<br/> <br/> <img width="1279" height="105" alt="34" src="https://github.com/user-attachments/assets/5953551a-87bd-46f1-b1d2-5986ce8e2d56" /> <br/>
+Hacemos una prueba creando el usuario Antonio con contraseña 1234:
+<br/> <br/> <img width="1273" height="393" alt="35" src="https://github.com/user-attachments/assets/515df193-6c35-4bdd-bfe9-3a81f14415e3" />
+
+## 4.1 Comprobaciones usando curl:
+Primero probamos que el DNS resuelve el subdominio del cliente, para ello hay que cambiar el netplan (en este caso los servidores DNS que usamos), este normalmente se encuentra en:
+~~~
+/etc/netplan/50-cloud-init.yaml
+~~~
+<br/> <img width="1284" height="314" alt="36" src="https://github.com/user-attachments/assets/add2d8ba-c82d-46f4-b4e3-a6d41cafacde" /> <br/>
+Aplicamos los cambios y comprobamos:
+<br/> <br/> <img width="1281" height="217" alt="37" src="https://github.com/user-attachments/assets/90463946-b8bf-492a-bcb4-b74866b95530" /> <br/>
+Esto no quiere decir que no funcione. A veces el servicio interno de red de Ubuntu (systemd-resolved) tiene una medida de seguridad por la cual a veces ignora la dirección 127.0.0.1 para evitar "bucles infinitos" de red, y se empeña en preguntarle al DNS secundario. Pero con dig nos devuelve la IP sin problemas.
+Vamos a probar la web/PHP con curl:
+<br/> <br/> <img width="1283" height="219" alt="38" src="https://github.com/user-attachments/assets/10edf42a-588c-4f1a-b850-8a141cb14c52" /> <br/>
+Y la aplicación de Python:
+<br/> <br/> <img width="1280" height="120" alt="39" src="https://github.com/user-attachments/assets/f71bf5df-a965-44a2-afdb-5301ea154fbb" /> <br/>
+Ahora lo comprobamos desde un cliente/PC en la misma subred:
+<br/> <br/> <img width="1218" height="352" alt="40" src="https://github.com/user-attachments/assets/3c5a46a8-5e8b-47be-affc-f07dc66a95de" /> <br/>
+Como podemos observar, al no ser 127.0.0.1 si hace ping correctamente al subdominio del usuario creado.
+Ahora procedemos a ver los recursos desde un navegador:
+<br/> <br/> <img width="1216" height="238" alt="41" src="https://github.com/user-attachments/assets/9e240aeb-6568-42c0-b093-7ddb31fa596f" /> <br/>
+<img width="1213" height="149" alt="42" src="https://github.com/user-attachments/assets/ede7e6c5-ba03-4152-90fe-9638774061f0" />
+
+## 5. Docker.
+Nuestro servidor actual ya tiene ocupados los puertos 80 (Apache) y 53 (Bind9). Si intentamos levantar contenedores Docker en esos mismos puertos, chocarán y darán error. Para no romper lo que ya hemos hecho, configuraremos los contenedores para que escuchen en puertos alternativos (ej. 8080 para la web y 5353 para el DNS) usando una red interna de Docker. Vamos a instalar Docker y el plugin de Compose:
+<br/> <br/> <img width="1282" height="313" alt="43" src="https://github.com/user-attachments/assets/00623f96-0082-4ee9-8064-234c909e9915" /> <br/>
+Añadimos el usuario al grupo de Docker para usar los contenedores sin usar sudo:
+<br/> <br/> <img width="1280" height="105" alt="44" src="https://github.com/user-attachments/assets/6b06109b-d329-4c27-90e5-4c91897ff387" /> <br/>
+Como nos dices en el enunciado que hay que configurar "volúmenes", vamos a crear una carpeta para este proyecto y subcarpetas para guardar los datos de los contenedores de forma persistente. Vamos a la carpeta personal:
+<br/> <br/> <img width="1280" height="161" alt="45" src="https://github.com/user-attachments/assets/90a3a58e-8d9b-4209-a2d0-0faec5d03be8" /> <br/>
+Y creamos un index.html para las comprobaciones:
+<br/> <br/> <img width="1277" height="184" alt="46" src="https://github.com/user-attachments/assets/bf22f568-a789-484e-a07f-446af7121736" /> <br/>
+Vamos a escribir un archivo compose que es el que nos va a crear la estructura del contenedor y desde el que quedará configurada la red, los volúmenes y los dos contenedores (un DNS basado en Ubuntu/Bind9 y un servidor Web basado en Nginx). Creamos el docker-compose y este sería su contenido:
+~~~
+services:
+  # 1. Contenedor DNS
+  servidor_dns:
+    image: ubuntu/bind9:latest
+    container_name: dns_docker
+    ports:
+      - "5353:53/udp"
+      - "5353:53/tcp"
+    volumes:
+      - ./dns:/etc/bind
+    networks:
+      - red_practica
+    restart: unless-stopped
+
+  # 2. Contenedor Web
+  servidor_web:
+    image: nginx:latest
+    container_name: web_docker
+    ports:
+      - "8080:80"
+    volumes:
+      - ./html:/usr/share/nginx/html:ro
+    networks:
+      - red_practica
+    restart: unless-stopped
+
+# Configuración de la red virtual de Docker
+networks:
+  red_practica:
+    driver: bridge
+~~~
+<br/> <img width="1272" height="867" alt="47" src="https://github.com/user-attachments/assets/c00f3ad6-dca1-4bc8-a986-5605365514f9" /> <br/>
+Como toda la práctica va de automatización mediante scripts, vamos a crear un pequeño script en Bash que levante el entorno y te muestre su estado. Lo creamos con:
+~~~
+nano desplegar_docker.sh
+~~~
+Su contenido será este código, que despliega el contenedor y te muestra el estado en una tabla cogiendo los parámetros a mostrar:
+<br/> <br/> <img width="1281" height="434" alt="48" src="https://github.com/user-attachments/assets/b6bed3c1-5a1f-4077-9736-afe5c261f63f" /> <br/>
+Le damos permisos de ejecución y lo probamos:
+<br/> <br/> <img width="1280" height="129" alt="49" src="https://github.com/user-attachments/assets/66430ca5-cc18-4d17-9118-0badf573a4ef" />
+<br/> <img width="1283" height="865" alt="50" src="https://github.com/user-attachments/assets/b853a75f-3924-40de-b086-3a16e5c336ca" /> <br/>
+Por último hacemos la comprobación desde un cliente:
+<br/> <br/> <img width="1220" height="196" alt="51" src="https://github.com/user-attachments/assets/f60dc432-8ddd-424e-a40e-f05960b6fa05" />
