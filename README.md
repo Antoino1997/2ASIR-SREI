@@ -30,3 +30,9 @@
 | Ejercicio | Descripción |
 | :--- | :--- |
 | [Práctica AWS](Practica%20AWS/README.md) | Documentación de la práctica sobre AWS |
+
+# Práctica Servidor Alojamiento Web
+
+| Ejercicio | Descripción |
+| :--- | :--- |
+| [Práctica Segundo Trimestre](Trabajo%202º%20Trimestre%20-%20Servidor%20Alojamiento%20Web/README.md) | Documentación de la práctica sobre servidor de alojamiento web |
