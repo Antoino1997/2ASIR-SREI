@@ -18,18 +18,31 @@
 
 ---
 
+##  Tema 2 - DNS
+
+| Ejercicio | Descripción |
+| :--- | :--- |
+| [Ejercicio 5](Tema%202%20-%20DNS/Ejercicio%205.md) | Caching & Forwarding |
+| [Ejercicio 6](Tema%202%20-%20DNS/Ejercicio%206.md) | Master DNS |
+| [Ejercicio 8](Tema%202%20-%20DNS/Ejercicio%208.md) | Subdominio |
+
+---
+
 # Práctica Servidores Web
 
 | Ejercicio | Descripción |
 | :--- | :--- |
 | [Práctica Primer Trimestre](Trabajo%201º%20Trimestre%20-%20Servidores%20Web/README.md) | Documentación de la práctica sobre servidores web |
 
+---
 
 # Práctica AWS
 
 | Ejercicio | Descripción |
 | :--- | :--- |
 | [Práctica AWS](Practica%20AWS/README.md) | Documentación de la práctica sobre AWS |
+
+---
 
 # Práctica Servidor Alojamiento Web
 
