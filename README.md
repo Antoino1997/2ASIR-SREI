@@ -33,6 +33,7 @@
 | Ejercicio | Descripción |
 | :--- | :--- |
 | [Ejercicio 0](Tema%205%20-%20Docker/Ejercicio%200.md) | Introducción a Docker |
+| [Ejercicio 1](Tema%205%20-%20Docker/Ejercicio%201.md) | Instalación Inicial |
 
 ---
 
