@@ -32,7 +32,7 @@
 
 | Ejercicio | Descripción |
 | :--- | :--- |
-| [Ejercicio 0](Tema%502%20-%20Docker/Ejercicio%200.md) | Introducción a Docker |
+| [Ejercicio 0](Tema%205%20-%20Docker/Ejercicio%200.md) | Introducción a Docker |
 
 ---
 
