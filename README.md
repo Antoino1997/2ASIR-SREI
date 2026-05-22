@@ -34,6 +34,11 @@
 | :--- | :--- |
 | [Ejercicio 0](Tema%205%20-%20Docker/Ejercicio%200.md) | Introducción a Docker |
 | [Ejercicio 1](Tema%205%20-%20Docker/Ejercicio%201.md) | Instalación Inicial |
+| [Ejercicio 2](Tema%205%20-%20Docker/Ejercicio%202.md) | Imágenes Docker |
+| [Ejercicio 3](Tema%205%20-%20Docker/Ejercicio%203.md) | Pull, rename y borrado de contenedores |
+| [Ejercicio 4](Tema%205%20-%20Docker/Ejercicio%204.md) | Almacenamiento y redes en Docker |
+| [Ejercicio 5](Tema%205%20-%20Docker/Ejercicio%205.md) | Creando escenarios multicontenedor con Docker Compose |
+| [Ejercicio 6](Tema%205%20-%20Docker/Ejercicio%206.md) | Creación de imágenes en docker |
 
 ---
 
