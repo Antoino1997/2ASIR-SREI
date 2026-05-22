@@ -1,6 +1,6 @@
 # Actividad 5 - Docker Compose
 
-## Despliegue de la aplicación Letschat mediante Docker Compose
+## Despliegue de la aplicación Let's Chat mediante Docker Compose
 
 Creamos el fichero `docker-compose.yml` con nano y lo levantamos en modo *daemon* con:
 ~~~
