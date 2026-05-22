@@ -1,3 +1,4 @@
+# Actividad 1 - Docker
 Para llevar a cabo una correcta instalación, primero vamos a actualizar el sistema con:
 ~~~
 sudo apt update && sudo apt upgrade
